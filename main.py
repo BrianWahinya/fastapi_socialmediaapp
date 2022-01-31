@@ -34,3 +34,13 @@ async def create_posts(post: Post):
     print(postdict)
     available_posts.append(postdict)
     return {"info": f"{postdict['id']} successfully added"}
+
+
+@app.get("/posts/{id}")
+async def get_post(id: int):
+    print(id)
+    filtered_posts = []
+    for p in available_posts:
+        if p['id'] == id:
+            filtered_posts.append(p)
+    return {"data": filtered_posts}
