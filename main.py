@@ -1,7 +1,8 @@
+from email import message
 from turtle import pos
 from typing import Optional
 from urllib import response
-from fastapi import Body, FastAPI, Response, status
+from fastapi import Body, FastAPI, Response, status, HTTPException
 from pydantic import BaseModel
 from random import randrange
 
@@ -57,5 +58,5 @@ async def get_latest_post(response: Response):
         post = available_posts[num_of_posts - 1]
         return {"latestpost": post}
     else:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"message": "no posts available"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                            "message": "no posts available"})
