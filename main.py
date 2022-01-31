@@ -1,7 +1,7 @@
 from turtle import pos
 from typing import Optional
 from urllib import response
-from fastapi import Body, FastAPI, Response
+from fastapi import Body, FastAPI, Response, status
 from pydantic import BaseModel
 from random import randrange
 
@@ -51,9 +51,11 @@ async def get_post(id: int):
 
 
 @app.get("/posts/latest")
-async def get_latest_post():
+async def get_latest_post(response: Response):
     num_of_posts = len(available_posts)
     if num_of_posts > 0:
         post = available_posts[num_of_posts - 1]
         return {"latestpost": post}
-    return {"message": "no posts available"}
+    else:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"message": "no posts available"}
