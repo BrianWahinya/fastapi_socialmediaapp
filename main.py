@@ -29,16 +29,13 @@ async def get_posts():
     return {"data": available_posts}
 
 
-@app.post("/posts")
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
 async def create_posts(post: Post, response: Response):
-    if not post:
-        response.status_code = 404
-    else:
-        postdict = post.dict()
-        print(postdict)
-        postdict['id'] = randrange(0, 1000000)
-        available_posts.append(postdict)
-        return {"info": f"{postdict['id']} successfully added"}
+    postdict = post.dict()
+    print(postdict)
+    postdict['id'] = randrange(0, 1000000)
+    available_posts.append(postdict)
+    return {"info": f"{postdict['id']} successfully added"}
 
 
 @app.get("/posts?id={id}")
