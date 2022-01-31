@@ -75,7 +75,7 @@ async def get_latest_post(response: Response):
 # DELETE SINGLE OR MULTIPLE POSTS
 
 
-@app.delete("/posts")
+@app.delete("/posts", status_code=status.HTTP_202_ACCEPTED)
 async def delete_post(id: PostDelete):
     iddict = id.dict()
     to_be_deleted_ids = iddict['id'].rstrip(', ').split(',')
