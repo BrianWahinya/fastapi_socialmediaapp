@@ -20,6 +20,10 @@ class PostDelete(BaseModel):
     id: str
 
 
+class PostUpdate(BaseModel):
+    update: list
+
+
 available_posts = []
 
 # MAIN ROOT ROUTE/PATH OPERAION
@@ -101,3 +105,18 @@ async def delete_post(id: PostDelete):
             "undeleted": undeleted_posts
         }
     }
+
+# UPDATE SINGLE OR MULTIPLE POSTS
+
+
+@app.put("/posts")
+async def update_post(post: PostUpdate):
+    postdict = post.dict()
+    updatePosts = postdict['update']
+    print(updatePosts)
+    posts = []
+    for p in updatePosts:
+        for i, ap in enumerate(available_posts):
+            if str(p['id']) == str(ap['id']):
+                posts.append({"message": p['id'], "index": i})
+    return posts
