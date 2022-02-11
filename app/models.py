@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import TIMESTAMP, Column, Integer, String, Boolean, text
 from .database import Base
 
 
@@ -9,4 +9,6 @@ class User(Base):
     firstname = Column(String, nullable=False)
     lastname = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
-    blocked = Column(Boolean, default=True)
+    active = Column(Boolean, server_default='True', nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True),
+                        server_default=text('CURRENT_TIMESTAMP'), nullable=False)
