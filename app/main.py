@@ -56,12 +56,22 @@ async def root():
 
 # GET ALL POSTS
 
+# using a cursor
+
 
 @app.get("/posts")
-async def get_posts(db: Session = Depends(get_db)):
+async def get_posts():
     cursor.execute(""" SELECT * FROM posts """)
     posts = cursor.fetchall()
-    return {"data": posts}
+    return {"data posts": posts}
+
+# using sqlalchemy
+
+
+@app.get("/users")
+async def get_users(db: Session = Depends(get_db)):
+    all_users = db.query(models.User).all()
+    return {"data users": all_users}
 
 # POST SINGLE POST
 
