@@ -2,7 +2,7 @@ from email import message
 from turtle import pos
 from typing import Optional
 from urllib import response
-from fastapi import Body, FastAPI, Response, status, HTTPException
+from fastapi import Body, FastAPI, Response, status, HTTPException, Depends
 from pydantic import BaseModel
 from random import randrange
 import time
@@ -10,7 +10,22 @@ import time
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+from sqlalchemy.orm import Session
+from . import models
+from .database import SessionLocal, engine
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 while True:
     try:
@@ -52,7 +67,7 @@ async def root():
 
 
 @app.get("/posts")
-async def get_posts():
+async def get_posts(db: Session = Depends(get_db)):
     cursor.execute(""" SELECT * FROM posts """)
     posts = cursor.fetchall()
     return {"data": posts}
