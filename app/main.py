@@ -1,3 +1,4 @@
+from ast import Delete
 from typing import Optional
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends
 from pydantic import BaseModel
@@ -6,6 +7,7 @@ import time
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from sqlalchemy import Integer
 
 from sqlalchemy.orm import Session
 from . import models
@@ -46,6 +48,10 @@ class PostDelete(BaseModel):
 
 class PostUpdate(BaseModel):
     update: list
+
+
+class UserDelete(BaseModel):
+    id: str
 
 
 available_posts = []
@@ -167,6 +173,19 @@ async def delete_post(id: PostDelete):
             "undeleted": undeleted_posts
         }
     }
+
+# using sqlalchemy
+
+
+@app.delete("/users")
+async def delete_user(user: UserDelete, db: Session = Depends(get_db)):
+    delete_user = db.query(models.User).filter(models.User.id == user.id)
+    if delete_user.first() == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"User: {user.id} does not exist")
+    delete_user.delete(synchronize_session=False)
+    db.commit()
+    return {"message": f"User: {user.id} deleted successfully"}
 
 # ************* UPDATE SINGLE OR MULTIPLE POSTS
 
