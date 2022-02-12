@@ -1,4 +1,3 @@
-from ast import Delete
 from typing import Optional
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends
 from pydantic import BaseModel
@@ -52,6 +51,13 @@ class PostUpdate(BaseModel):
 
 class UserDelete(BaseModel):
     id: str
+
+
+class UserUpdate(BaseModel):
+    id: int
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    email: Optional[str] = None
 
 
 available_posts = []
@@ -187,7 +193,7 @@ async def delete_user(user: UserDelete, db: Session = Depends(get_db)):
     db.commit()
     return {"message": f"User: {user.id} deleted successfully"}
 
-# ************* UPDATE SINGLE OR MULTIPLE POSTS
+# ************* UPDATE SINGLE OR MULTIPLE POSTS/USERS
 
 
 @app.put("/posts")
@@ -201,3 +207,22 @@ async def update_post(post: PostUpdate):
             if str(p['id']) == str(ap['id']):
                 posts.append({"message": p['id'], "index": i})
     return posts
+
+# using sqlalchemy
+
+
+@app.put("/users")
+async def update_user(user: UserUpdate, db: Session = Depends(get_db)):
+    user_dict = user.dict()
+    keys_not_none = {}
+    for key in user_dict.keys():
+        if user_dict[key] != None and key != 'id':
+            keys_not_none[key] = user_dict[key]
+    print(keys_not_none)
+    update_user = db.query(models.User).filter(models.User.id == user.id)
+    if update_user.first() == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"User: {user.id} not found")
+    update_user.update(keys_not_none, synchronize_session=False)
+    db.commit()
+    return {"message": f"User: {user.id} updated"}
