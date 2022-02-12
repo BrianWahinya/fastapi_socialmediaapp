@@ -1,7 +1,4 @@
-from email import message
-from turtle import pos
 from typing import Optional
-from urllib import response
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends
 from pydantic import BaseModel
 from random import randrange
@@ -12,7 +9,7 @@ from psycopg2.extras import RealDictCursor
 
 from sqlalchemy.orm import Session
 from . import models
-from .database import engine, get_db
+from .database import SessionLocal, engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -35,6 +32,12 @@ class Post(BaseModel):
     content: str
     published: bool = True
     rating: Optional[int] = None
+
+
+class User(BaseModel):
+    firstname: str
+    lastname: str
+    email: str
 
 
 class PostDelete(BaseModel):
@@ -83,6 +86,21 @@ async def create_posts(post: Post, response: Response):
     postdict['id'] = randrange(0, 1000000)
     available_posts.append(postdict)
     return {"info": f"{postdict['id']} successfully added"}
+
+# using sqlalchemy
+
+
+@app.post("/users", status_code=status.HTTP_201_CREATED)
+async def create_user(user: User, db: Session = Depends(get_db)):
+    # use this
+    # new_user = models.User(firstname=user.firstname,
+    #                        lastname=user.lastname, email=user.email)
+    # or
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"inserted data": new_user}
 
 # GET SINGLE POST
 
