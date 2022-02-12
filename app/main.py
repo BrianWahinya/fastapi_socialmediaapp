@@ -50,14 +50,14 @@ class PostUpdate(BaseModel):
 
 available_posts = []
 
-# MAIN ROOT ROUTE/PATH OPERAION
+# ************* MAIN ROOT ROUTE/PATH OPERAION
 
 
 @app.get("/")
 async def root():
     return {"message": "Hello World!"}
 
-# GET ALL POSTS
+# ************* GET ALL POSTS/USERS
 
 # using a cursor
 
@@ -76,7 +76,7 @@ async def get_users(db: Session = Depends(get_db)):
     all_users = db.query(models.User).all()
     return {"data users": all_users}
 
-# POST SINGLE POST
+# ************* POST SINGLE POST/USER
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
@@ -102,7 +102,7 @@ async def create_user(user: User, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"inserted data": new_user}
 
-# GET SINGLE POST
+# ************* GET SINGLE POST/USER
 
 
 @app.get("/posts?id={id}")
@@ -114,7 +114,18 @@ async def get_post(id: int):
             filtered_posts.append(p)
     return {"data": filtered_posts}
 
-# GET LATEST POST
+
+# using sqlalchemy
+@app.get("/users/{id}")
+async def get_user(id: int, db: Session = Depends(get_db)):
+    one_user = db.query(models.User).filter(models.User.id == id).first()
+    if not one_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"User with id: {id} was not found")
+    return {"data": one_user}
+
+
+# ************* GET LATEST POST
 
 
 @app.get("/posts/latest")
@@ -127,7 +138,7 @@ async def get_latest_post(response: Response):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
                             "message": "no posts available"})
 
-# DELETE SINGLE OR MULTIPLE POSTS
+# ************* DELETE SINGLE OR MULTIPLE POSTS
 
 
 @app.delete("/posts", status_code=status.HTTP_202_ACCEPTED)
@@ -157,7 +168,7 @@ async def delete_post(id: PostDelete):
         }
     }
 
-# UPDATE SINGLE OR MULTIPLE POSTS
+# ************* UPDATE SINGLE OR MULTIPLE POSTS
 
 
 @app.put("/posts")
