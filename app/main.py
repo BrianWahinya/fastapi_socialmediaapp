@@ -1,6 +1,4 @@
-from typing import Optional
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends
-from pydantic import BaseModel
 from random import randrange
 import time
 
@@ -9,7 +7,7 @@ from psycopg2.extras import RealDictCursor
 from sqlalchemy import Integer
 
 from sqlalchemy.orm import Session
-from . import models
+from . import models, schemas
 from .database import SessionLocal, engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
@@ -26,38 +24,6 @@ while True:
     except Exception as error:
         print("Failed conn: ", error)
         time.sleep(2)
-
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
-
-
-class User(BaseModel):
-    firstname: str
-    lastname: str
-    email: str
-
-
-class PostDelete(BaseModel):
-    id: str
-
-
-class PostUpdate(BaseModel):
-    update: list
-
-
-class UserDelete(BaseModel):
-    id: str
-
-
-class UserUpdate(BaseModel):
-    id: int
-    firstname: Optional[str] = None
-    lastname: Optional[str] = None
-    email: Optional[str] = None
 
 
 available_posts = []
@@ -83,16 +49,16 @@ async def get_posts():
 # using sqlalchemy
 
 
-@app.get("/users")
+@app.get("/users", response_model=list[schemas.UserResponse])
 async def get_users(db: Session = Depends(get_db)):
     all_users = db.query(models.User).all()
-    return {"data users": all_users}
+    return all_users
 
 # ************* POST SINGLE POST/USER
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-async def create_posts(post: Post, response: Response):
+async def create_posts(post: schemas.Post, response: Response):
     postdict = post.dict()
     print(postdict)
     postdict['id'] = randrange(0, 1000000)
@@ -102,8 +68,8 @@ async def create_posts(post: Post, response: Response):
 # using sqlalchemy
 
 
-@app.post("/users", status_code=status.HTTP_201_CREATED)
-async def create_user(user: User, db: Session = Depends(get_db)):
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
+async def create_user(user: schemas.User, db: Session = Depends(get_db)):
     # use this
     # new_user = models.User(firstname=user.firstname,
     #                        lastname=user.lastname, email=user.email)
@@ -112,7 +78,7 @@ async def create_user(user: User, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"inserted data": new_user}
+    return new_user
 
 # ************* GET SINGLE POST/USER
 
@@ -128,13 +94,13 @@ async def get_post(id: int):
 
 
 # using sqlalchemy
-@app.get("/users/{id}")
+@app.get("/users/{id}", response_model=schemas.UserResponse)
 async def get_user(id: int, db: Session = Depends(get_db)):
     one_user = db.query(models.User).filter(models.User.id == id).first()
     if not one_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"User with id: {id} was not found")
-    return {"data": one_user}
+    return one_user
 
 
 # ************* GET LATEST POST
@@ -154,7 +120,7 @@ async def get_latest_post(response: Response):
 
 
 @app.delete("/posts", status_code=status.HTTP_202_ACCEPTED)
-async def delete_post(id: PostDelete):
+async def delete_post(id: schemas.PostDelete):
     iddict = id.dict()
     to_be_deleted_ids = iddict['id'].rstrip(', ').split(',')
     present_posts_ids = []
@@ -184,7 +150,7 @@ async def delete_post(id: PostDelete):
 
 
 @app.delete("/users")
-async def delete_user(user: UserDelete, db: Session = Depends(get_db)):
+async def delete_user(user: schemas.UserDelete, db: Session = Depends(get_db)):
     delete_user = db.query(models.User).filter(models.User.id == user.id)
     if delete_user.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -197,7 +163,7 @@ async def delete_user(user: UserDelete, db: Session = Depends(get_db)):
 
 
 @app.put("/posts")
-async def update_post(post: PostUpdate):
+async def update_post(post: schemas.PostUpdate):
     postdict = post.dict()
     updatePosts = postdict['update']
     print(updatePosts)
@@ -211,8 +177,8 @@ async def update_post(post: PostUpdate):
 # using sqlalchemy
 
 
-@app.put("/users")
-async def update_user(user: UserUpdate, db: Session = Depends(get_db)):
+@app.put("/users", response_model=schemas.UserResponse)
+async def update_user(user: schemas.UserUpdate, db: Session = Depends(get_db)):
     user_dict = user.dict()
     keys_not_none = {}
     for key in user_dict.keys():
@@ -226,4 +192,4 @@ async def update_user(user: UserUpdate, db: Session = Depends(get_db)):
     update_user.update(keys_not_none, synchronize_session=False)
     db.commit()
     # return {"message": f"User: {user.id} updated"}
-    return {"updated_user": update_user.first()}
+    return update_user.first()
