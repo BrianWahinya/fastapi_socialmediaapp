@@ -39,10 +39,8 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
 
 
-class UserResponse(BaseModel):
-    firstname: str
-    lastname: str
-    email: str
+class UserResponse(User):
+    id: int
     created_at: datetime
 
     class Config:
